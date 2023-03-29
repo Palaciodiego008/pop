@@ -178,11 +178,12 @@ func (q *Query) Or(stmt string, args ...interface{}) *Query {
 		qs := fmt.Sprintf("(%s)", strings.Join(inq, ","))
 		stmt = inRegex.ReplaceAllString(stmt, " IN "+qs)
 	}
+
 	if len(q.whereClauses) == 0 {
 		q.Where(stmt, args...)
-	} else {
-		q.whereClauses = append(q.whereClauses, clause{"OR " + stmt, args})
 	}
+
+	q.whereClauses = append(q.whereClauses, clause{"OR " + stmt, args})
 
 	return q
 }

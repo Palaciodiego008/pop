@@ -405,3 +405,16 @@ func Test_RawQuery_Empty(t *testing.T) {
 		})
 	})
 }
+
+func Test_Or(t *testing.T) {
+	if PDB == nil {
+		t.Skip("skipping integration tests")
+	}
+	a := require.New(t)
+	m := NewModel(new(Enemy), context.Background())
+
+	q := PDB.Where("id = ?", 1).Or("id = ?", 2)
+	sql, args := q.ToSQL(m)
+	a.Equal("SELECT * FROM enemies AS enemies WHERE id = $1 OR id = $2", sql)
+	a.Equal([]interface{}{1}, args)
+}
