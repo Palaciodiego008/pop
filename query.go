@@ -171,7 +171,7 @@ func (q *Query) Or(stmt string, args ...interface{}) *Query {
 	}
 
 	if inRegex.MatchString(stmt) {
-		inq := []string{}
+		var inq = []string{}
 		for i := 0; i < len(args); i++ {
 			inq = append(inq, "?")
 		}
