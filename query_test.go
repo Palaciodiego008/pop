@@ -410,11 +410,19 @@ func Test_Or(t *testing.T) {
 	if PDB == nil {
 		t.Skip("skipping integration tests")
 	}
-	a := require.New(t)
-	m := NewModel(new(Enemy), context.Background())
+	r := require.New(t)
 
-	q := PDB.Where("id = ?", 1).Or("id = ?", 2)
-	sql, args := q.ToSQL(m)
-	a.Equal("SELECT * FROM enemies AS enemies WHERE id = $1 OR id = $2", sql)
-	a.Equal([]interface{}{1}, args)
+	transaction(func(tx *Connection) {
+		u1 := &Song{Title: "1A"}
+		u2 := &Song{Title: "2A"}
+		u3 := &Song{Title: "C"}
+		r.NoError(tx.Create(u1))
+		r.NoError(tx.Create(u2))
+		r.NoError(tx.Create(u3))
+
+		var songs []Song
+		err := tx.Where("title = ?", "1A").Or("title = ?", "2A").All(&songs)
+		r.NoError(err)
+		r.Len(songs, 2)
+	})
 }
