@@ -420,9 +420,17 @@ func Test_Or(t *testing.T) {
 		r.NoError(tx.Create(u2))
 		r.NoError(tx.Create(u3))
 
-		var songs []Song
-		err := tx.Where("title = ?", "1A").Or("title = ?", "2A").All(&songs)
-		r.NoError(err)
+		songs := []Song{}
+		q := tx.Where("title = ?", "1A").Or("title = ?", "2A")
+		r.NoError(q.All(&songs))
+
+		m := NewModel(new([]Song), context.Background())
+		sql, args := q.ToSQL(m)
+
+		queryString := "SELECT songs.composed_by_id, songs.created_at, songs.id, songs.title, songs.u_id, songs.updated_at FROM songs AS songs WHERE (title = $1) OR (title = $2)"
+		r.Equal(queryString, sql)
+		r.Equal([]interface{}{"1A", "2A"}, args)
 		r.Len(songs, 2)
+
 	})
 }

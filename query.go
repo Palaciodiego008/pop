@@ -148,6 +148,7 @@ func (q *Query) Where(stmt string, args ...interface{}) *Query {
 		stmt = inRegex.ReplaceAllString(stmt, " IN "+qs)
 	}
 	q.whereClauses = append(q.whereClauses, clause{stmt, args})
+
 	return q
 }
 
@@ -171,19 +172,22 @@ func (q *Query) Or(stmt string, args ...interface{}) *Query {
 	}
 
 	if inRegex.MatchString(stmt) {
-		var inq = []string{}
-		for i := 0; i < len(args); i++ {
-			inq = append(inq, "?")
-		}
-		qs := fmt.Sprintf("(%s)", strings.Join(inq, ","))
-		stmt = inRegex.ReplaceAllString(stmt, " IN "+qs)
+		placeholders := strings.Repeat("?, ", len(args)-1) + "?"
+		stmt = inRegex.ReplaceAllString(strings.ToUpper(stmt), " IN ("+placeholders+")")
 	}
 
 	if len(q.whereClauses) == 0 {
 		q.Where(stmt, args...)
+		return q
 	}
 
-	q.whereClauses = append(q.whereClauses, clause{"OR " + stmt, args})
+	lastClause := q.whereClauses[len(q.whereClauses)-1]
+	q.whereClauses = q.whereClauses[:len(q.whereClauses)-1]
+
+	orClause := fmt.Sprintf("(%s) OR (%s)", lastClause.Fragment, stmt)
+	orArgs := append(lastClause.Arguments, args...)
+
+	q.whereClauses = append(q.whereClauses, clause{orClause, orArgs})
 
 	return q
 }
